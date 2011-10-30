@@ -6,10 +6,17 @@ BUILD_DIR = bin
 
 all: $(BUILD_DIR)/ipamjm.ttf $(BUILD_DIR)/mjcharinfo.db $(BUILD_DIR)/mjview
 
+data/ipamjm00101.zip:
+	mkdir -p data
+	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/ipamjm00101.php
+data/MJMojiJouhouIchiranhyou00101.zip:
+	mkdir -p data
+	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/mjmojiichiran/MJMojiJouhouIchiranhyou00101.zip
+
 $(BUILD_DIR)/mjview: $(OBJS)
 	$(CC) -o $@ $(OBJS) $(CFLAGS) $(LIBS)
 
-$(BUILD_DIR)/ipamjm.ttf: data/ipamjm*.zip
+$(BUILD_DIR)/ipamjm.ttf: data/ipamjm00101.zip
 	mkdir -p $(BUILD_DIR)
 	unzip -p $< */ipamjm.ttf > $@
 
