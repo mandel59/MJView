@@ -27,9 +27,11 @@ int main(void)
         fputs("GLYPH_NAME is NULL\n", stderr);
         exit(1);
     }
-    if( ft_init(ipamjm) ) {
+    
+    cairo_font_face_t* face = ft_init(ipamjm);
+    if(face == NULL) {
         fputs("ft_init error\n", stderr);
-        exit(1);
+    	exit(1);
     }
     
     double svg_em = 128.0;
@@ -41,19 +43,18 @@ int main(void)
         exit(1);
     }
     cr = cairo_create(surface);
-    
-    if( ft_load_glyph_name(glyph_name) ) {
-        fputs("ft_load_glyph_name error\n", stderr);
-        exit(1);
-    }
-    
-    ft_translate(cr, svg_em);
-    ft_draw_outline(cr);
-    cairo_fill(cr);
+    cairo_set_font_face(cr, face);
+    cairo_set_font_size(cr, svg_em);
+    cairo_font_extents_t extents;
+    cairo_font_extents(cr, &extents);
+    cairo_glyph_t glyph;
+    glyph.index = ft_get_name_index(glyph_name);
+    glyph.x = 0;
+    glyph.y = extents.height - extents.descent;
+    cairo_show_glyphs(cr, &glyph, 1);
     
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
-    
     ft_done();
 }
 
