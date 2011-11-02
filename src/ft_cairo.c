@@ -4,6 +4,7 @@
 #include <cairo-svg.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include <cairo-ft.h>
 
 FT_Library ft;
 FT_Face ft_face;
