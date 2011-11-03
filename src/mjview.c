@@ -1,60 +1,112 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <cairo.h>
-#include <cairo-svg.h>
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include <ft_cairo.h>
+/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
+/*
+ * mjview.c
+ * Copyright (C) Ryusei Yamaguchi 2011 <mandel59@m59-dynabook-u>
+ * 
+ */
+#include "mjview.h"
 
-cairo_status_t write_to_stdout(void *closure, unsigned char *data, unsigned int length)
+#include <glib/gi18n.h>
+
+
+
+/* For testing propose use the local (not installed) ui file */
+/* #define UI_FILE PACKAGE_DATA_DIR"/mjview/ui/mjview.ui" */
+#define UI_FILE "src/mjview.ui"
+#define TOP_WINDOW "window"
+
+
+G_DEFINE_TYPE (Mjview, mjview, GTK_TYPE_APPLICATION);
+
+/* Create a new window loading a file */
+static void
+mjview_new_window (GApplication *app,
+                           GFile        *file)
 {
-    if( fwrite(data, sizeof(unsigned char), length, stdout) < length ) {
-        return CAIRO_STATUS_WRITE_ERROR;
-    }
-    return CAIRO_STATUS_SUCCESS;
+	GtkWidget *window;
+
+	GtkBuilder *builder;
+	GError* error = NULL;
+
+	/* Load UI from file */
+	builder = gtk_builder_new ();
+	if (!gtk_builder_add_from_file (builder, UI_FILE, &error))
+	{
+		g_critical ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
+	}
+
+	/* Auto-connect signal handlers */
+	gtk_builder_connect_signals (builder, NULL);
+
+	/* Get the window object from the ui file */
+	window = GTK_WIDGET (gtk_builder_get_object (builder, TOP_WINDOW));
+        if (!window)
+        {
+                g_critical ("Widget \"%s\" is missing in file %s.",
+				TOP_WINDOW,
+				UI_FILE);
+        }
+	g_object_unref (builder);
+	
+	
+	gtk_window_set_application (GTK_WINDOW (window), GTK_APPLICATION (app));
+	if (file != NULL)
+	{
+		/* TODO: Add code here to open the file in the new window */
+	}
+	gtk_widget_show_all (GTK_WIDGET (window));
 }
 
-int main(void)
+
+/* GApplication implementation */
+static void
+mjview_activate (GApplication *application)
 {
-    char *ipamjm, *glyph_name;
-    ipamjm = getenv("IPAMJM");
-    if( ipamjm == NULL ) {
-        fputs("IPAMJM is NULL\n", stderr);
-        exit(1);
-    }
-    glyph_name = getenv("GLYPH_NAME");
-    if( glyph_name == NULL ) {
-        fputs("GLYPH_NAME is NULL\n", stderr);
-        exit(1);
-    }
-    
-    cairo_font_face_t* face = ft_init(ipamjm);
-    if(face == NULL) {
-        fputs("ft_init error\n", stderr);
-    	exit(1);
-    }
-    
-    double svg_em = 128.0;
-    cairo_surface_t *surface;
-    cairo_t *cr;
-    surface = cairo_svg_surface_create_for_stream((cairo_write_func_t)&write_to_stdout, NULL, svg_em, svg_em);
-    if( surface == NULL ) {
-        fputs("surface is NULL\n", stderr);
-        exit(1);
-    }
-    cr = cairo_create(surface);
-    cairo_set_font_face(cr, face);
-    cairo_set_font_size(cr, svg_em);
-    cairo_font_extents_t extents;
-    cairo_font_extents(cr, &extents);
-    cairo_glyph_t glyph;
-    glyph.index = ft_get_name_index(glyph_name);
-    glyph.x = 0;
-    glyph.y = extents.height - extents.descent;
-    cairo_show_glyphs(cr, &glyph, 1);
-    
-    cairo_destroy(cr);
-    cairo_surface_destroy(surface);
-    ft_done();
+  mjview_new_window (application, NULL);
 }
 
+static void
+mjview_open (GApplication  *application,
+                     GFile        **files,
+                     gint           n_files,
+                     const gchar   *hint)
+{
+  gint i;
+
+  for (i = 0; i < n_files; i++)
+    mjview_new_window (application, files[i]);
+}
+
+static void
+mjview_init (Mjview *object)
+{
+
+}
+
+static void
+mjview_finalize (GObject *object)
+{
+
+	G_OBJECT_CLASS (mjview_parent_class)->finalize (object);
+}
+
+static void
+mjview_class_init (MjviewClass *klass)
+{
+	G_APPLICATION_CLASS (klass)->activate = mjview_activate;
+	G_APPLICATION_CLASS (klass)->open = mjview_open;
+
+	G_OBJECT_CLASS (klass)->finalize = mjview_finalize;
+}
+
+Mjview *
+mjview_new (void)
+{
+	g_type_init ();
+
+	return g_object_new (mjview_get_type (),
+	                     "application-id", "org.gnome.mjview",
+	                     "flags", G_APPLICATION_HANDLES_OPEN,
+	                     NULL);
+}

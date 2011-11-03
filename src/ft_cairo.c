@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <config.h>
 #include <cairo.h>
 #include <cairo-svg.h>
 #include <ft2build.h>
@@ -8,10 +7,9 @@
 
 FT_Library ft;
 FT_Face ft_face;
-cairo_font_face_t *font_face;
+cairo_font_face_t *font_face = NULL;
 
 cairo_font_face_t* ft_init(char *fontpath) {
-    cairo_status_t status;
     if( FT_Init_FreeType(&ft) ) {
         return NULL;
     }
@@ -26,6 +24,11 @@ cairo_font_face_t* ft_init(char *fontpath) {
         FT_Done_FreeType(ft);
         return NULL;
     }
+    return font_face;
+}
+
+cairo_font_face_t* ft_get_cairo_font_face(void)
+{
     return font_face;
 }
 
