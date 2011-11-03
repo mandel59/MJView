@@ -31,7 +31,8 @@ LT_INIT
 
 
 
-PKG_CHECK_MODULES(MJVIEW, [gtk+-3.0 >= 2.90.3 cairo cairo-ft freetype2])
+PKG_CHECK_MODULES(MJVIEW, sqlite3
+[gtk+-3.0 >= 2.90.3 cairo cairo-ft freetype2])
 
 
 

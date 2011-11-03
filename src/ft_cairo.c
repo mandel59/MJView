@@ -5,8 +5,8 @@
 #include FT_FREETYPE_H
 #include <cairo-ft.h>
 
-FT_Library ft;
-FT_Face ft_face;
+FT_Library ft = NULL;
+FT_Face ft_face = NULL;
 cairo_font_face_t *font_face = NULL;
 
 cairo_font_face_t* ft_init(char *fontpath) {
@@ -33,9 +33,9 @@ cairo_font_face_t* ft_get_cairo_font_face(void)
 }
 
 void ft_done(void) {
-    cairo_font_face_destroy(font_face);
-    FT_Done_Face(ft_face);
-    FT_Done_FreeType(ft);
+	if (font_face) cairo_font_face_destroy(font_face);
+    if (ft_face) FT_Done_Face(ft_face);
+    if (ft) FT_Done_FreeType(ft);
 }
 
 FT_UInt ft_get_name_index(char *glyph_name)
