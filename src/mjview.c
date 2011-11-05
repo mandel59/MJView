@@ -12,12 +12,15 @@
 
 
 /* For testing propose use the local (not installed) ui file */
-/* #define UI_FILE PACKAGE_DATA_DIR"/mjview/ui/mjview.ui" */
-/* #define FONT_FILE PACKAGE_DATA_DIR"/mjview/fonts/ipamjm.ttf" */
-/* #define DB_FILE PACKAGE_DATA_DIR"/mjview/db/mj.db" */
+#if 0
+#define UI_FILE PACKAGE_DATA_DIR"/mjview/ui/mjview.ui"
+#define FONT_FILE PACKAGE_DATA_DIR"/mjview/fonts/ipamjm.ttf"
+#define DB_FILE PACKAGE_DATA_DIR"/mjview/db/mj.db"
+#else
 #define UI_FILE "src/mjview.ui"
 #define FONT_FILE PACKAGE_TOP_BUILDDIR"/data/ipamjm.ttf"
 #define DB_FILE PACKAGE_TOP_BUILDDIR"/data/mj.db"
+#endif
 
 #define TOP_WINDOW "window"
 
@@ -105,6 +108,7 @@ static void
 mjview_finalize (GObject *object)
 {
 	sqlite3_close(mjdb);
+	ft_done();
 	G_OBJECT_CLASS (mjview_parent_class)->finalize (object);
 }
 
@@ -141,7 +145,7 @@ cairo_clear (cairo_t *cr)
 cairo_surface_t *glyph_surface = NULL;
 
 void
-drawglyph (cairo_surface_t *surface, char *glyphname)
+drawglyph (cairo_surface_t *surface, const gchar *glyphname)
 {
 	int height = cairo_image_surface_get_height (surface);
 	cairo_t *cr = cairo_create (surface);
@@ -156,7 +160,7 @@ drawglyph (cairo_surface_t *surface, char *glyphname)
 	cairo_font_extents_t extents;
 	cairo_font_extents (cr, &extents);
 	cairo_glyph_t glyph;
-	glyph.index = ft_get_name_index (glyphname);
+	glyph.index = ft_get_name_index ((char*)glyphname);
 	glyph.x = 0;
 	glyph.y = extents.height - extents.descent;
 	cairo_show_glyphs (cr, &glyph, 1);
@@ -184,14 +188,93 @@ drawingarea1_configure_event (GtkWidget *widget, GdkEventConfigure *event, gpoin
 }
 
 void
-entry1_activate (GtkEntry *entry, gpointer user_data)
+entry1_activate_drawing_area (GtkEntry *entry, gpointer user_data)
 {
-	GtkDrawingArea *da = GTK_DRAWING_AREA(user_data);
-	GtkTreeIter iter;
-	/*drawglyph(glyph_surface, gtk_entry_get_text (entry));*/
-	gchar num[9];
-	g_snprintf (num, 9, "mj%06d", g_random_int_range (1, 60386));
-	drawglyph(glyph_surface, num);
-	gtk_entry_set_text (entry, num);
-	gtk_widget_queue_draw_area (da, 0, 0, gtk_widget_get_allocated_width (da), gtk_widget_get_allocated_height (da));
+	GtkDrawingArea *da = GTK_DRAWING_AREA (user_data);
+	gchar mjname[9];
+	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
+	mjname[0] = 'm'; mjname[1] = 'j';
+	drawglyph(glyph_surface, mjname);
+	GtkWidget *wda = GTK_WIDGET (da);
+	gint width = gtk_widget_get_allocated_width (wda);
+	gint height = gtk_widget_get_allocated_height (wda);
+	gtk_widget_queue_draw_area (wda, 0, 0, width, height);
+}
+
+void
+entry1_activate_textview1 (GtkEntry *entry, gpointer user_data)
+{
+	GtkTextView *tv = GTK_TEXT_VIEW (user_data);
+	gchar mjname[9];
+	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
+	mjname[0] = 'M'; mjname[1] = 'J';
+	sqlite3_stmt *stmt;
+	if (sqlite3_prepare(mjdb, "select * from mj_info where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			gchar *a;
+			a = g_strdup_printf("%s\nsvg version: %s\n汎用電子: %s\n平成明朝: %s\n%s stroke(s)\nhistory: %s\n",
+		                    sqlite3_column_text(stmt, 0),
+		                    sqlite3_column_text(stmt, 1),
+		                    sqlite3_column_text(stmt, 2),
+		                    sqlite3_column_text(stmt, 3),
+		                    sqlite3_column_text(stmt, 4),
+		                    sqlite3_column_text(stmt, 5));
+			gtk_text_buffer_set_text (gtk_text_view_get_buffer (tv), a, -1);
+			g_free(a);
+		}
+		sqlite3_finalize (stmt);
+	}
+}
+
+void
+entry1_activate_textview2 (GtkEntry *entry, gpointer user_data)
+{
+	GtkTextView *tv = GTK_TEXT_VIEW (user_data);
+	gchar mjname[9];
+	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
+	mjname[0] = 'M'; mjname[1] = 'J';
+	sqlite3_stmt *stmt;
+	gchar *a;
+	a = g_strdup ("");
+	if (sqlite3_prepare(mjdb, "select * from mj_ucs where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		while (sqlite3_step(stmt) == SQLITE_ROW) {
+			gchar *b = g_strdup_printf("U+%4X (%s)", sqlite3_column_int(stmt, 1), sqlite3_column_text(stmt, 2));
+			g_free(a);
+			a = b;
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select reading from mj_reading where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		gchar *b = g_strconcat (a, "\nreadings:");
+		g_free(a);
+		a = b;
+		while (sqlite3_step(stmt) == SQLITE_ROW) {
+			gchar *b = g_strjoin("\n", a, sqlite3_column_text(stmt, 0));
+			g_free(a);
+			a = b;
+		}
+		sqlite3_finalize (stmt);
+	}
+	gtk_text_buffer_set_text (gtk_text_view_get_buffer (tv), a, -1);
+	g_free(a);
+}
+
+void
+entry1_activate_icon_view (GtkEntry *entry, gpointer user_data)
+{
+	GtkIconView *iv = GTK_ICON_VIEW (user_data);
+	GtkTreeModel *model = gtk_icon_view_get_model (iv);
+	
 }
