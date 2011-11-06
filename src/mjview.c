@@ -41,6 +41,12 @@
 
 #define TOP_WINDOW "window"
 
+GtkWidget *window = NULL;
+GtkListStore *liststore1 = NULL;
+GtkEntry *entry1 = NULL;
+GtkIconView *iconview1 = NULL;
+GtkToggleButton *togglebutton1 = NULL;
+GtkFileFilter *filefilter1 = NULL;
 
 G_DEFINE_TYPE (Mjview, mjview, GTK_TYPE_APPLICATION);
 
@@ -49,8 +55,6 @@ static void
 mjview_new_window (GApplication *app,
                            GFile        *file)
 {
-	GtkWidget *window;
-
 	GtkBuilder *builder;
 	GError* error = NULL;
 
@@ -67,14 +71,19 @@ mjview_new_window (GApplication *app,
 
 	/* Get the window object from the ui file */
 	window = GTK_WIDGET (gtk_builder_get_object (builder, TOP_WINDOW));
-        if (!window)
-        {
-                g_critical ("Widget \"%s\" is missing in file %s.",
-				TOP_WINDOW,
-				UI_FILE);
-        }
+	liststore1 = GTK_LIST_STORE (gtk_builder_get_object (builder, "liststore1"));
+	entry1 = GTK_ENTRY (gtk_builder_get_object (builder, "entry1"));
+	iconview1 = GTK_ICON_VIEW (gtk_builder_get_object (builder, "iconview1"));
+	togglebutton1 = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "togglebutton1"));
+	filefilter1 = GTK_FILE_FILTER (gtk_builder_get_object (builder, "filefilter1"));
+	if (!(window && liststore1 && entry1 && iconview1 && togglebutton1))
+	{
+		g_critical ("Widget \"%s\" is missing in file %s.",
+		            TOP_WINDOW,
+		            UI_FILE);
+	}
 	g_object_unref (builder);
-	
+
 	
 	gtk_window_set_application (GTK_WINDOW (window), GTK_APPLICATION (app));
 	if (file != NULL)
@@ -121,9 +130,14 @@ mjview_init (Mjview *object)
 	}
 }
 
+cairo_surface_t *glyph_surface = NULL;
+cairo_surface_t *small_glyph_surface = NULL;
+
 static void
 mjview_finalize (GObject *object)
 {
+	if (glyph_surface) cairo_surface_destroy (glyph_surface);
+	if (small_glyph_surface) cairo_surface_destroy (small_glyph_surface);
 	sqlite3_close(mjdb);
 	ft_done();
 	G_OBJECT_CLASS (mjview_parent_class)->finalize (object);
@@ -159,12 +173,9 @@ cairo_clear (cairo_t *cr)
 	cairo_restore (cr);
 }
 
-cairo_surface_t *glyph_surface = NULL;
-
 void
-drawglyph (cairo_surface_t *surface, const gchar *glyphname)
+drawglyph (cairo_surface_t *surface, const gchar *glyphname, double em)
 {
-	int height = cairo_image_surface_get_height (surface);
 	cairo_t *cr = cairo_create (surface);
 	cairo_font_face_t* face = ft_get_cairo_font_face ();
 	if (!face) {
@@ -173,7 +184,7 @@ drawglyph (cairo_surface_t *surface, const gchar *glyphname)
 	cairo_clear (cr);
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	cairo_set_font_face (cr, face);
-	cairo_set_font_size (cr, height);
+	cairo_set_font_size (cr, em);
 	cairo_font_extents_t extents;
 	cairo_font_extents (cr, &extents);
 	cairo_glyph_t glyph;
@@ -205,67 +216,104 @@ drawingarea1_configure_event (GtkWidget *widget, GdkEventConfigure *event, gpoin
 }
 
 void
-entry1_activate_drawing_area (GtkEntry *entry, gpointer user_data)
+iconview1_select_drawing_area (GtkIconView *iconview, gpointer user_data)
 {
-	GtkDrawingArea *da = GTK_DRAWING_AREA (user_data);
-	gchar mjname[9];
-	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
-	mjname[0] = 'm'; mjname[1] = 'j';
-	drawglyph(glyph_surface, mjname);
-	GtkWidget *wda = GTK_WIDGET (da);
-	gint width = gtk_widget_get_allocated_width (wda);
-	gint height = gtk_widget_get_allocated_height (wda);
-	gtk_widget_queue_draw_area (wda, 0, 0, width, height);
+	GList *list = gtk_icon_view_get_selected_items (iconview);
+	if(g_list_length(list) < 1) {
+		g_list_free (list);
+		return;
+	}
+	GtkTreeModel *model = GTK_TREE_MODEL ( gtk_icon_view_get_model (iconview) );
+	GtkTreePath *path = g_list_first(list)->data;
+	GtkTreeIter iter;
+	gtk_tree_model_get_iter (model, &iter, path);
+	gchar *mjname;
+	gtk_tree_model_get (model, &iter, 1, &mjname, -1);
+	g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
+	g_list_free (list);
+	drawglyph(glyph_surface, mjname, cairo_image_surface_get_height (glyph_surface));
+	GtkWidget *da = GTK_WIDGET (user_data);
+	gint width = gtk_widget_get_allocated_width (da);
+	gint height = gtk_widget_get_allocated_height (da);
+	gtk_widget_queue_draw_area (da, 0, 0, width, height);
+
+	g_free(mjname);
 }
 
 void
-entry1_activate_textview1 (GtkEntry *entry, gpointer user_data)
+iconview1_select_textview1 (GtkIconView *iconview, gpointer user_data)
 {
+	GList *list = gtk_icon_view_get_selected_items (iconview);
+	if(g_list_length(list) < 1) {
+		g_list_free (list);
+		return;
+	}
+	GtkTreeModel *model = GTK_TREE_MODEL ( gtk_icon_view_get_model (iconview) );
+	GtkTreePath *path = g_list_first(list)->data;
+	GtkTreeIter iter;
+	gtk_tree_model_get_iter (model, &iter, path);
+	gchar *mjname;
+	gtk_tree_model_get (model, &iter, 1, &mjname, -1);
+	g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
+	g_list_free (list);
+	
+	mjname[0] = 'M'; mjname[1] = 'J'; mjname[8] = '\0';
 	GtkTextView *tv = GTK_TEXT_VIEW (user_data);
-	gchar mjname[9];
-	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
-	mjname[0] = 'M'; mjname[1] = 'J';
 	sqlite3_stmt *stmt;
-	if (sqlite3_prepare(mjdb, "select * from mj_info where mj = ?;",
-	                    60, &stmt, NULL) ) {
+	if (sqlite3_prepare(mjdb, "select * from mj_info where mj = ?;", 60, &stmt, NULL) ) {
 		g_warning ("can't open stmt");
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
 			gchar *a;
-			a = g_strdup_printf("%s\nsvg version: %s\n汎用電子: %s\n平成明朝: %s\n%s stroke(s)\nhistory: %s\n",
-		                    sqlite3_column_text(stmt, 0),
-		                    sqlite3_column_text(stmt, 1),
-		                    sqlite3_column_text(stmt, 2),
-		                    sqlite3_column_text(stmt, 3),
-		                    sqlite3_column_text(stmt, 4),
-		                    sqlite3_column_text(stmt, 5));
+			a = g_strdup_printf("%s\nSVG Version: %s\nHanyo Denshi: %05d\nHeisei Mincho: %s\n%s stroke(s)\nHistory:\n%s",
+			                    sqlite3_column_text(stmt, 0),
+			                    sqlite3_column_text(stmt, 1),
+			                    sqlite3_column_int (stmt, 2),
+			                    sqlite3_column_text(stmt, 3),
+			                    sqlite3_column_text(stmt, 4),
+			                    sqlite3_column_text(stmt, 5));
 			gtk_text_buffer_set_text (gtk_text_view_get_buffer (tv), a, -1);
 			g_free(a);
 		}
 		sqlite3_finalize (stmt);
 	}
+	g_free(mjname);
 }
 
 void
-entry1_activate_textview2 (GtkEntry *entry, gpointer user_data)
+iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 {
+	GList *list = gtk_icon_view_get_selected_items (iconview);
+	if(g_list_length(list) < 1) {
+		g_list_free (list);
+		return;
+	}
+	GtkTreeModel *model = GTK_TREE_MODEL ( gtk_icon_view_get_model (iconview) );
+	GtkTreePath *path = g_list_first(list)->data;
+	GtkTreeIter iter;
+	gtk_tree_model_get_iter (model, &iter, path);
+	gchar *mjname;
+	gtk_tree_model_get (model, &iter, 1, &mjname, -1);
+	g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
+	g_list_free (list);
+	
+	mjname[0] = 'M'; mjname[1] = 'J'; mjname[8] = '\0';
 	GtkTextView *tv = GTK_TEXT_VIEW (user_data);
-	gchar mjname[9];
-	g_strlcpy (mjname, gtk_entry_get_text (entry), 9);
-	mjname[0] = 'M'; mjname[1] = 'J';
 	sqlite3_stmt *stmt;
-	gchar *a;
-	a = g_strdup ("");
-	if (sqlite3_prepare(mjdb, "select * from mj_ucs where mj = ?;",
+	GString *str;
+	str = g_string_new("");
+	if (sqlite3_prepare(mjdb, "select radical, strokes from mj_index where mj = ?;",
 	                    60, &stmt, NULL) ) {
 		g_warning ("can't open stmt");
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
-			gchar *b = g_strdup_printf("U+%4X (%s)", sqlite3_column_int(stmt, 1), sqlite3_column_text(stmt, 2));
-			g_free(a);
-			a = b;
+			uint rad = sqlite3_column_int(stmt, 0);
+			gunichar urad = 0x2f00 + rad - 1;
+			gchar outbuf[7];
+			outbuf[g_unichar_to_utf8(urad, outbuf)] = '\0';
+			g_string_append_printf (str, "Radical-stroke Index: %s[%d]-%d\n", outbuf, rad, sqlite3_column_int(stmt, 1));
 		}
 		sqlite3_finalize (stmt);
 	}
@@ -274,24 +322,421 @@ entry1_activate_textview2 (GtkEntry *entry, gpointer user_data)
 		g_warning ("can't open stmt");
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
-		gchar *b = g_strconcat (a, "\nreadings:");
-		g_free(a);
-		a = b;
+		GPtrArray *readings = g_ptr_array_new();
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
-			gchar *b = g_strjoin("\n", a, sqlite3_column_text(stmt, 0));
-			g_free(a);
-			a = b;
+			g_ptr_array_add (readings, g_strdup (sqlite3_column_text(stmt, 0)));
+		}
+		if (readings->len > 0) {
+			g_string_append (str, "Readings:\n");
+			g_ptr_array_add (readings, NULL);
+			gchar *readings_joined = g_strjoinv (", ", (gchar**) readings->pdata);
+			g_string_append_printf (str, "%s\n", readings_joined);
+			g_free (readings_joined);
+		}
+		g_ptr_array_free (readings, TRUE);
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select measure from mj_measure where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		while (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf (str,
+			                        " * %s\n",
+			                        sqlite3_column_text(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
 	}
-	gtk_text_buffer_set_text (gtk_text_view_get_buffer (tv), a, -1);
-	g_free(a);
+	if (sqlite3_prepare(mjdb, "select * from mj_ucs where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		while (sqlite3_step(stmt) == SQLITE_ROW) {
+			gunichar wc = sqlite3_column_int(stmt, 1);
+			gchar outbuf[7];
+			outbuf[g_unichar_to_utf8(wc, outbuf)] = '\0';
+			gchar *implemented = sqlite3_column_int(stmt, 3) ? "yes" : "no";
+			g_string_append_printf (str,
+			                        "UCS: U+%4X (%s)\nUCS Reliability Class: %s\n"
+			                        "UCS Implemented: %s\n",
+			                        wc, outbuf, sqlite3_column_text(stmt, 2),
+			                        implemented);
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select * from mj_ivs where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			gunichar ucs = sqlite3_column_int(stmt, 1);
+			gunichar ivs = sqlite3_column_int(stmt, 2);
+			gchar outbuf[13];
+			gint ucs_len = g_unichar_to_utf8(ucs, outbuf);
+			gint ivs_len = g_unichar_to_utf8(ivs, outbuf + ucs_len);
+			outbuf[ucs_len + ivs_len] = '\0';
+			gchar *implemented = sqlite3_column_int(stmt, 3) ? "yes" : "no";
+			g_string_append_printf(str, "IVS: %4X %4X (%s)\nIVS Implemented: %s\n",
+			                       ucs, ivs, outbuf, implemented);
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select code, subsumption, class from mj_x0213 where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "JIS X 0213: %s",
+			                       sqlite3_column_text(stmt, 0));
+			if(sqlite3_column_int(stmt, 2) == 2) {
+				g_string_append_printf(str, " (subsumed: %s)", sqlite3_column_text(stmt, 1));
+			}
+			g_string_append (str, "\n");
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select code from mj_x0212 where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "JIS X 0212: %s\n",
+			                       sqlite3_column_text(stmt, 0));
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select code from mj_koseki where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "Koseki Toitsu Moji Bango: %06d\n",
+			                       sqlite3_column_int(stmt, 0));
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select code from mj_juki where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "Juki Net Toitsu Moji Code: J+%04X\n",
+			                       sqlite3_column_int(stmt, 0));
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select code from mj_toki where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "Toki Toitsu Moji Bango: %08d\n",
+			                       sqlite3_column_int(stmt, 0));
+		}
+		sqlite3_finalize (stmt);
+	}
+	if (sqlite3_prepare(mjdb, "select daikanwa from mj_daikanwa where mj = ?;",
+	                    60, &stmt, NULL) ) {
+		g_warning ("can't open stmt");
+	} else {
+		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
+		if (sqlite3_step(stmt) == SQLITE_ROW) {
+			g_string_append_printf(str, "Dai Kanwa Jiten: %s\n",
+			                       sqlite3_column_text(stmt, 0));
+		}
+		sqlite3_finalize (stmt);
+	}
+	gtk_text_buffer_set_text (gtk_text_view_get_buffer (tv), str->str, -1);
+	g_string_free(str, TRUE);
+	
+	g_free(mjname);
+}
+
+sqlite3_stmt*
+build_query (const gchar* str)
+{
+	GPtrArray *queries = g_ptr_array_new();
+	GPtrArray *binds = g_ptr_array_new();
+	gchar **str_and = g_strsplit (str, " ", -1);
+	gchar **itr;
+	for (itr = str_and; *itr != NULL; itr++) {
+		gchar *s = *itr;
+		if ( *s == '\0' ) {
+			continue;
+		}
+		if ( g_str_has_prefix(s, "MJ") || g_str_has_prefix(s, "mj") ) {
+			char *c;
+			unsigned long l = strtoul (s+2, &c, 10);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 10);
+				if (l2 < 10) {
+					l2 = (l / 10) * 10 + l2;
+				} else if (l2 < 100) {
+					l2 = (l / 100) * 100 + l2;
+				} else if (l2 < 1000) {
+					l2 = (l / 1000) * 1000 + l2;
+				} else if (l2 < 10000) {
+					l2 = (l / 10000) * 10000 + l2;
+				}
+				g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi between ? and ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
+				continue;
+			}
+			g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+			continue;
+		}
+		if ( g_str_has_prefix(s, "koseki-") || g_str_has_prefix(s, "toki-") ) {
+			char *c;
+			unsigned long l;
+			l = strtoul (s+(*s=='k'?7:5), &c, 10);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 10);
+				if (l2 < 10) {
+					l2 = (l / 10) * 10 + l2;
+				} else if (l2 < 100) {
+					l2 = (l / 100) * 100 + l2;
+				} else if (l2 < 1000) {
+					l2 = (l / 1000) * 1000 + l2;
+				} else if (l2 < 10000) {
+					l2 = (l / 10000) * 10000 + l2;
+				} else if (l2 < 100000) {
+					l2 = (l / 100000) * 100000 + l2;
+				}
+				if (*s=='k') {
+					g_ptr_array_add(queries, " select mj from mj_koseki where code between ? and ? ");
+				} else {
+					g_ptr_array_add(queries, " select mj from mj_toki where code between ? and ? ");
+				}
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
+				continue;
+			}
+			if (*s=='k') {
+				g_ptr_array_add(queries, " select mj from mj_koseki where code = ? ");
+			} else {
+				g_ptr_array_add(queries, " select mj from mj_toki where code = ? ");
+			}
+			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+			continue;
+		}
+		if ( g_str_has_prefix(s, "MJ") || g_str_has_prefix(s, "mj") ) {
+			char *c;
+			unsigned long l = strtoul (s+2, &c, 10);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 10);
+				if (l2 < 10) {
+					l2 = (l / 10) * 10 + l2;
+				} else if (l2 < 100) {
+					l2 = (l / 100) * 100 + l2;
+				} else if (l2 < 1000) {
+					l2 = (l / 1000) * 1000 + l2;
+				} else if (l2 < 10000) {
+					l2 = (l / 10000) * 10000 + l2;
+				}
+				g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi between ? and ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
+				continue;
+			}
+			g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+			continue;
+		}
+		if ( g_str_has_prefix(s, "U+") ) {
+			char *c;
+			unsigned long l = strtoul (s+2, &c, 16);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 16);
+				if (l2 < 0x10) {
+					l2 = (l & 0xFFFFFFF0) + l2;
+				} else if (l2 < 0x100) {
+					l2 = (l & 0xFFFFFF00) + l2;
+				} else if (l2 < 0x1000) {
+					l2 = (l & 0xFFFFF000) + l2;
+				}
+				g_ptr_array_add(queries, " select mj from mj_ucs where ucs between ? and ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
+				continue;
+			}
+			g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+			continue;
+		}
+		if ( g_str_has_prefix(s, "J+") ) {
+			char *c;
+			unsigned long l = strtoul (s+2, &c, 16);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 16);
+				if (l2 < 0x10) {
+					l2 = (l & 0xFFFFFFF0) + l2;
+				} else if (l2 < 0x100) {
+					l2 = (l & 0xFFFFFF00) + l2;
+				} else if (l2 < 0x1000) {
+					l2 = (l & 0xFFFFF000) + l2;
+				}
+				g_ptr_array_add(queries, " select mj from mj_juki where code between ? and ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
+				continue;
+			}
+			g_ptr_array_add(queries, " select mj from mj_juki where code = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
+			continue;
+		}
+		if ( *s == '<' ) {
+			g_ptr_array_add(queries, " select mj from mj_info where strokes < ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%lu", strtoul (s+1, NULL, 10)));
+			continue;
+		}
+		if ( *s == '=' ) {
+			char *c;
+			unsigned long l = strtoul (s+1, &c, 10);
+			if (*c == '-' && *(c+1) != '\0') {
+				unsigned long l2 = strtoul (c+1, NULL, 10);
+				if (l2 < l) {
+					unsigned long t = l2;
+					l2 = l;
+					l = t;
+				}
+				g_ptr_array_add(queries, " select mj from mj_info where strokes between ? and ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%lu", l));
+				g_ptr_array_add(binds, g_strdup_printf("%lu", l2));
+				continue;
+			}
+			g_ptr_array_add(queries, " select mj from mj_info where strokes = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%lu", l));
+			continue;
+		}
+		if ( *s == '>' ) {
+			g_ptr_array_add(queries, " select mj from mj_info where strokes > ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%lu", strtoul (s+1, NULL, 10)));
+			continue;
+		}
+		gunichar us = g_utf8_get_char (s);
+		GUnicodeScript sc = g_unichar_get_script(us);
+		if (sc == G_UNICODE_SCRIPT_HAN) {
+			gunichar us_c, us_c2;
+			g_unichar_decompose (us, &us_c, &us_c2);
+			if(us == us_c) {
+				g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%d", us));
+			} else {
+				g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? or ucs = ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%d", us));
+				g_ptr_array_add(binds, g_strdup_printf("%d", us_c));
+			}
+		} else if (sc == G_UNICODE_SCRIPT_KATAKANA || sc == G_UNICODE_SCRIPT_HIRAGANA) {
+			g_ptr_array_add(queries, " select mj from mj_reading where reading = ? ");
+			g_ptr_array_add(binds, g_strdup(s));
+		}
+	}
+	g_strfreev(str_and);
+	if (queries->len == 0) {
+		g_ptr_array_free (queries, FALSE);
+		g_ptr_array_free (binds, TRUE);
+		return NULL;
+	}
+	g_ptr_array_add(queries, NULL);
+	gchar *query = g_strjoinv (" intersect ", (gchar**) queries->pdata);
+	
+	sqlite3_stmt* stmt = NULL;
+	if (sqlite3_prepare(mjdb, query, -1, &stmt, NULL)) {
+		g_ptr_array_free (queries, FALSE);
+		g_ptr_array_free (binds, TRUE);
+		g_warning ("can't open stmt");
+		return NULL;
+	}
+	guint i;
+	for (i = 0; i < binds->len; i++) {
+		sqlite3_bind_text (stmt, i+1, g_ptr_array_index(binds, i), -1, NULL);
+	}
+	g_ptr_array_free (queries, FALSE);
+	g_ptr_array_free (binds, TRUE);
+	return stmt;
+}
+
+sqlite3_stmt *step_add_stmt = NULL;
+
+gboolean
+step_add (gpointer user_data)
+{
+	GtkListStore *ls = liststore1;
+	sqlite3_stmt *stmt = step_add_stmt;
+	int em = 32;
+	if (small_glyph_surface == NULL) {
+		small_glyph_surface
+			= cairo_image_surface_create (CAIRO_FORMAT_ARGB32, em, em);
+	}
+	cairo_surface_t *glyph = small_glyph_surface;
+	int i = 0, max = 100;
+	while (i < max && sqlite3_step(stmt) == SQLITE_ROW) {
+		gchar *mjname = g_strdup((gchar*) sqlite3_column_text(stmt, 0));
+		mjname[0] = 'm'; mjname[1] = 'j';
+		drawglyph(glyph, mjname, cairo_image_surface_get_height (glyph));
+		GdkPixbuf *buf = gdk_pixbuf_get_from_surface(glyph, 0, 0, em, em);
+		GtkTreeIter iter;
+		gtk_list_store_append (ls, &iter);
+		gtk_list_store_set (ls, &iter,
+		                    0, buf,
+		                    1, mjname,
+		                    -1);
+		g_object_unref (buf);
+		g_free (mjname);
+		i++;
+	}
+	if (i == max) {
+		return TRUE;
+	}
+	sqlite3_finalize (stmt);
+	step_add_stmt = NULL;
+	gtk_toggle_button_set_active (togglebutton1, FALSE);
+	return FALSE;
 }
 
 void
-entry1_activate_icon_view (GtkEntry *entry, gpointer user_data)
+entry1_activate_togglebutton1 (GtkEntry *entry, gpointer user_data)
 {
-	GtkIconView *iv = GTK_ICON_VIEW (user_data);
-	GtkTreeModel *model = gtk_icon_view_get_model (iv);
-	
+	GtkToggleButton *button = GTK_TOGGLE_BUTTON(user_data);
+	entry1 = entry;
+	gtk_toggle_button_set_active (button, TRUE);
+}
+
+void
+togglebutton1_clicked (GtkToggleButton *togglebutton, gpointer user_data)
+{
+	static guint sid = 0;
+	if (sid != 0) {
+		GSource *source = g_main_context_find_source_by_id (NULL, sid);
+		if (source != NULL && !g_source_is_destroyed (source)) {
+			g_source_destroy (source);
+			if (step_add_stmt) sqlite3_finalize (step_add_stmt);
+		}
+		sid = 0;
+	}
+	if ( gtk_toggle_button_get_active(togglebutton) ) {
+		sqlite3_stmt *stmt = build_query (gtk_entry_get_text (entry1));
+		if(stmt == NULL) {
+			gtk_toggle_button_set_active (togglebutton, FALSE);
+			return;
+		}
+		GtkIconView *iv = GTK_ICON_VIEW (user_data);
+		GtkListStore *ls = GTK_LIST_STORE( gtk_icon_view_get_model (iv) );
+		togglebutton1 = togglebutton;
+		liststore1 = ls;
+		gtk_list_store_clear (ls);
+		gtk_icon_view_set_pixbuf_column (iv, 0);
+		step_add_stmt = stmt;
+		sid = g_idle_add((GSourceFunc) step_add, NULL);
+	}
 }

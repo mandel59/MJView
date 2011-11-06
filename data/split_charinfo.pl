@@ -20,8 +20,8 @@ $db->do("create table mj_juki ( mj TEXT, code INTEGER )");
 $db->do("create table mj_toki ( mj TEXT, code INTEGER )");
 $db->do("create table mj_x0213 ( mj TEXT, code TEXT, subsumption TEXT, class INTEGER )");
 $db->do("create table mj_x0212 ( mj TEXT, code TEXT )");
-$db->do("create table mj_ucs ( mj TEXT, ucs INTEGER, class TEXT, imp TEXT )");
-$db->do("create table mj_ivs ( mj TEXT, ucs INTEGER, ivs INTEGER, imp TEXT )");
+$db->do("create table mj_ucs ( mj TEXT, ucs INTEGER, class TEXT, imp INTEGER )");
+$db->do("create table mj_ivs ( mj TEXT, ucs INTEGER, ivs INTEGER, imp INTEGER )");
 $db->do("create table mj_daikanwa ( mj TEXT, daikanwa TEXT )");
 
 my %insert;
@@ -71,8 +71,8 @@ while( <STDIN> ) {
     $insert{'toki'}->execute($mj_glyph, $toki) if $toki;
     $insert{'x0213'}->execute($mj_glyph, $x0213, $x0213_subsumption, $x0213_class) if $x0213;
     $insert{'x0212'}->execute($mj_glyph, $x0212) if $x0212;
-    $insert{'ucs'}->execute($mj_glyph, hex(substr($ucs, 2)), $ucs_class, $ucs_imp) if $ucs;
-    $insert{'ivs'}->execute($mj_glyph, hex($ivs_ucs), hex($ivs), $ivs_imp) if $ivs;
+    $insert{'ucs'}->execute($mj_glyph, hex(substr($ucs, 2)), $ucs_class, $ucs_imp?1:0) if $ucs;
+    $insert{'ivs'}->execute($mj_glyph, hex($ivs_ucs), hex($ivs), $ivs_imp?1:0) if $ivs;
     $insert{'daikanwa'}->execute($mj_glyph, $daikanwa) if $daikanwa;
 }
 

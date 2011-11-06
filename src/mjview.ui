@@ -13,44 +13,53 @@
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">MJView</property>
-    <property name="default_width">600</property>
-    <property name="default_height">400</property>
+    <property name="default_width">640</property>
+    <property name="default_height">480</property>
     <child>
       <object class="GtkPaned" id="box1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="position">290</property>
         <child>
           <object class="GtkBox" id="box5">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
+            <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkBox" id="box3">
+              <object class="GtkBox" id="hbox1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
                   <object class="GtkEntry" id="entry1">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="has_focus">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="width_chars">10</property>
-                    <property name="invisible_char_set">True</property>
-                    <signal name="activate" handler="entry1_activate_drawing_area" object="drawingarea1" swapped="no"/>
-                    <signal name="activate" handler="entry1_activate_icon_view" object="iconview1" swapped="no"/>
-                    <signal name="activate" handler="entry1_activate_textview1" object="textview1" swapped="no"/>
-                    <signal name="activate" handler="entry1_activate_textview2" object="textview2" swapped="no"/>
+                    <property name="width_chars">0</property>
+                    <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                    <signal name="activate" handler="entry1_activate_togglebutton1" object="togglebutton1" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <placeholder/>
+                  <object class="GtkToggleButton" id="togglebutton1">
+                    <property name="label" translatable="yes">search</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_action_appearance">False</property>
+                    <accelerator key="Return" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                    <signal name="clicked" handler="togglebutton1_clicked" object="iconview1" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -60,15 +69,25 @@
               </packing>
             </child>
             <child>
-              <object class="GtkIconView" id="iconview1">
-                <property name="width_request">100</property>
+              <object class="GtkScrolledWindow" id="scrolledwindow3">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="model">liststore1</property>
-                <property name="row_spacing">0</property>
-                <property name="column_spacing">0</property>
-                <property name="tooltip_column">1</property>
-                <property name="item_padding">0</property>
+                <property name="can_focus">False</property>
+                <property name="vscrollbar_policy">always</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkIconView" id="iconview1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="model">liststore1</property>
+                    <property name="row_spacing">0</property>
+                    <property name="column_spacing">0</property>
+                    <property name="tooltip_column">1</property>
+                    <property name="item_padding">0</property>
+                    <signal name="selection-changed" handler="iconview1_select_drawing_area" object="drawingarea1" swapped="no"/>
+                    <signal name="selection-changed" handler="iconview1_select_textview1" object="textview1" swapped="no"/>
+                    <signal name="selection-changed" handler="iconview1_select_textview2" object="textview2" swapped="no"/>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -78,7 +97,7 @@
             </child>
           </object>
           <packing>
-            <property name="resize">False</property>
+            <property name="resize">True</property>
             <property name="shrink">True</property>
           </packing>
         </child>
@@ -134,30 +153,17 @@
               </packing>
             </child>
             <child>
-              <object class="GtkExpander" id="details_expander">
+              <object class="GtkScrolledWindow" id="scrolledwindow1">
+                <property name="height_request">50</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="expanded">True</property>
+                <property name="shadow_type">in</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="scrolledwindow1">
-                    <property name="height_request">50</property>
+                  <object class="GtkTextView" id="textview2">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="GtkTextView" id="textview2">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="editable">False</property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel" id="details_label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">details</property>
+                    <property name="editable">False</property>
+                    <property name="wrap_mode">word</property>
                   </object>
                 </child>
               </object>
