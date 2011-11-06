@@ -623,12 +623,40 @@ build_query (const gchar* str)
 			g_ptr_array_add(binds, g_strdup_printf("%lu", strtoul (s+1, NULL, 10)));
 			continue;
 		}
-		gunichar us = g_utf8_get_char (s);
+		gunichar us;
+		if (*s == '[') {
+			long a = strtoul (s+1, &s, 10);
+			if(a < 1 || 214 < a) continue;
+			us = a + 0x2F00 - 1;
+		} else {
+			us = g_utf8_get_char (s);
+		}
 		GUnicodeScript sc = g_unichar_get_script(us);
 		if (sc == G_UNICODE_SCRIPT_HAN) {
 			gunichar us_c, us_c2;
 			g_unichar_decompose (us, &us_c, &us_c2);
-			if(us == us_c) {
+			if ( 0x2F00 <= us && us <= 0x2FD5) {
+				gchar *c = g_utf8_next_char(s);
+				if ( *c == '[' ) {
+					strtoul (c+1, &c, 10);
+					c++;
+				}
+				if ( *c == '-' && *(c+1) != '\0' ) {
+					unsigned long strokes = strtoul (c+1, &c, 10);
+					if ( *c == '-' && *(c+1) != '\0' ) {
+						unsigned long strokes2 = strtoul (c+1, &c, 10);
+						g_ptr_array_add(queries, " select mj from mj_index where strokes between ? and ? and radical = ?");
+						g_ptr_array_add(binds, g_strdup_printf("%ld", strokes));
+						g_ptr_array_add(binds, g_strdup_printf("%ld", strokes2));
+					} else {
+						g_ptr_array_add(queries, " select mj from mj_index where strokes = ? and radical = ?");
+						g_ptr_array_add(binds, g_strdup_printf("%ld", strokes));
+					}
+				} else {
+					g_ptr_array_add(queries, " select mj from mj_index where radical = ? ");
+				}
+				g_ptr_array_add(binds, g_strdup_printf("%d", us - 0x2F00 + 1));
+			} else if(us == us_c) {
 				g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? ");
 				g_ptr_array_add(binds, g_strdup_printf("%d", us));
 			} else {
