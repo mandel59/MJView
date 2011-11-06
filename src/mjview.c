@@ -636,7 +636,14 @@ build_query (const gchar* str)
 		GUnicodeScript sc = g_unichar_get_script(us);
 		if (sc == G_UNICODE_SCRIPT_HAN) {
 			gunichar us_c, us_c2;
+#if GLIB_MAJOR_VERSION >= 2 && GLIB_MINOR_VERSION >= 30
 			g_unichar_decompose (us, &us_c, &us_c2);
+#else
+			gsize len;
+			gunichar *pus_c = g_unicode_canonical_decomposition (us, &len);
+			us_c = *pus_c;
+			g_free(pus_c);
+#endif
 			if ( 0x2F00 <= us && us <= 0x2FD5) {
 				gchar *c = g_utf8_next_char(s);
 				if ( *c == '[' ) {
