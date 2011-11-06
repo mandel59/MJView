@@ -101,20 +101,6 @@ mjview_activate (GApplication *application)
   mjview_new_window (application, NULL);
 }
 
-static void
-mjview_open (GApplication  *application,
-                     GFile        **files,
-                     gint           n_files,
-                     const gchar   *hint)
-{
-#if 0
-	gint i;
-	for (i = 0; i < n_files; i++)
-		mjview_new_window (application, files[i]);
-#endif
-	mjview_new_window (application, NULL);
-}
-
 sqlite3 *mjdb = NULL;
 
 static void
@@ -149,7 +135,6 @@ static void
 mjview_class_init (MjviewClass *klass)
 {
 	G_APPLICATION_CLASS (klass)->activate = mjview_activate;
-	G_APPLICATION_CLASS (klass)->open = mjview_open;
 
 	G_OBJECT_CLASS (klass)->finalize = mjview_finalize;
 }
@@ -161,7 +146,7 @@ mjview_new (void)
 
 	return g_object_new (mjview_get_type (),
 	                     "application-id", "org.gnome.mjview",
-	                     "flags", G_APPLICATION_HANDLES_OPEN,
+	                     "flags", G_APPLICATION_NON_UNIQUE,
 	                     NULL);
 }
 
