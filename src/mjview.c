@@ -705,7 +705,7 @@ step_add (gpointer user_data)
 {
 	GtkListStore *ls = liststore1;
 	sqlite3_stmt *stmt = step_add_stmt;
-	int em = 32;
+	int em = 50;
 	if (small_glyph_surface == NULL) {
 		small_glyph_surface
 			= cairo_image_surface_create (CAIRO_FORMAT_ARGB32, em, em);
