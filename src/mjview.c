@@ -107,10 +107,12 @@ mjview_open (GApplication  *application,
                      gint           n_files,
                      const gchar   *hint)
 {
-  gint i;
-
-  for (i = 0; i < n_files; i++)
-    mjview_new_window (application, files[i]);
+#if 0
+	gint i;
+	for (i = 0; i < n_files; i++)
+		mjview_new_window (application, files[i]);
+#endif
+	mjview_new_window (application, NULL);
 }
 
 sqlite3 *mjdb = NULL;
@@ -324,7 +326,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		GPtrArray *readings = g_ptr_array_new();
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_ptr_array_add (readings, g_strdup (sqlite3_column_text(stmt, 0)));
+			g_ptr_array_add (readings, g_strdup ((gchar*) sqlite3_column_text(stmt, 0)));
 		}
 		if (readings->len > 0) {
 			g_string_append (str, "Readings:\n");
@@ -638,7 +640,9 @@ build_query (const gchar* str)
 			if ( 0x2F00 <= us && us <= 0x2FD5) {
 				gchar *c = g_utf8_next_char(s);
 				if ( *c == '[' ) {
-					strtoul (c+1, &c, 10);
+					if (us != strtoul (c+1, &c, 10) + 0x2F00 - 1) {
+						continue;
+					}
 					c++;
 				}
 				if ( *c == '-' && *(c+1) != '\0' ) {
