@@ -1,3 +1,6 @@
 # List of source files containing translatable strings.
 
 src/main.c
+src/mjview.c
+[type: gettext/gtkbuilder]src/mjview.ui
+

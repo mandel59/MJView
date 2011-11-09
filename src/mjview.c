@@ -28,7 +28,7 @@
 #include <sqlite3.h>
 
 
-#if 1
+#if !DEBUG
 #define UI_FILE PACKAGE_DATA_DIR"/mjview/ui/mjview.ui"
 #define FONT_FILE PACKAGE_DATA_DIR"/mjview/fonts/ipamjm.ttf"
 #define DB_FILE PACKAGE_DATA_DIR"/mjview/db/mj.db"
@@ -253,7 +253,7 @@ iconview1_select_textview1 (GtkIconView *iconview, gpointer user_data)
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
 			gchar *a;
-			a = g_strdup_printf("%s\nSVG Version: %s\nHanyo Denshi: %05d\nHeisei Mincho: %s\n%s stroke(s)\nHistory:\n%s",
+			a = g_strdup_printf(_("%s\nSVG Version: %s\nHanyo Denshi: %05d\nHeisei Mincho: %s\n%s stroke(s)\nHistory:\n%s"),
 			                    sqlite3_column_text(stmt, 0),
 			                    sqlite3_column_text(stmt, 1),
 			                    sqlite3_column_int (stmt, 2),
@@ -300,7 +300,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 			gunichar urad = 0x2f00 + rad - 1;
 			gchar outbuf[7];
 			outbuf[g_unichar_to_utf8(urad, outbuf)] = '\0';
-			g_string_append_printf (str, "Radical-stroke Index: %s[%d]-%d\n", outbuf, rad, sqlite3_column_int(stmt, 1));
+			g_string_append_printf (str, _("Radical-stroke Index: %s[%d]-%d\n"), outbuf, rad, sqlite3_column_int(stmt, 1));
 		}
 		sqlite3_finalize (stmt);
 	}
@@ -314,7 +314,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 			g_ptr_array_add (readings, g_strdup ((gchar*) sqlite3_column_text(stmt, 0)));
 		}
 		if (readings->len > 0) {
-			g_string_append (str, "Readings:\n");
+			g_string_append (str, _("Readings:\n"));
 			g_ptr_array_add (readings, NULL);
 			gchar *readings_joined = g_strjoinv (", ", (gchar**) readings->pdata);
 			g_string_append_printf (str, "%s\n", readings_joined);
@@ -330,7 +330,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		while (sqlite3_step(stmt) == SQLITE_ROW) {
 			g_string_append_printf (str,
-			                        " * %s\n",
+			                        _(" * %s\n"),
 			                        sqlite3_column_text(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -346,8 +346,8 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 			outbuf[g_unichar_to_utf8(wc, outbuf)] = '\0';
 			gchar *implemented = sqlite3_column_int(stmt, 3) ? "yes" : "no";
 			g_string_append_printf (str,
-			                        "UCS: U+%4X (%s)\nUCS Reliability Class: %s\n"
-			                        "UCS Implemented: %s\n",
+			                        _("UCS: U+%4X (%s)\nUCS Reliability Class: %s\n"
+			                        "UCS Implemented: %s\n"),
 			                        wc, outbuf, sqlite3_column_text(stmt, 2),
 			                        implemented);
 		}
@@ -366,7 +366,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 			gint ivs_len = g_unichar_to_utf8(ivs, outbuf + ucs_len);
 			outbuf[ucs_len + ivs_len] = '\0';
 			gchar *implemented = sqlite3_column_int(stmt, 3) ? "yes" : "no";
-			g_string_append_printf(str, "IVS: %4X %4X (%s)\nIVS Implemented: %s\n",
+			g_string_append_printf(str, _("IVS: %4X %4X (%s)\nIVS Implemented: %s\n"),
 			                       ucs, ivs, outbuf, implemented);
 		}
 		sqlite3_finalize (stmt);
@@ -377,7 +377,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "JIS X 0213: %s",
+			g_string_append_printf(str, _("JIS X 0213: %s"),
 			                       sqlite3_column_text(stmt, 0));
 			if(sqlite3_column_int(stmt, 2) == 2) {
 				g_string_append_printf(str, " (subsumed: %s)", sqlite3_column_text(stmt, 1));
@@ -392,7 +392,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "JIS X 0212: %s\n",
+			g_string_append_printf(str, _("JIS X 0212: %s\n"),
 			                       sqlite3_column_text(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -403,7 +403,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "Koseki Toitsu Moji Bango: %06d\n",
+			g_string_append_printf(str, _("Koseki Toitsu Moji Bango: %06d\n"),
 			                       sqlite3_column_int(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -414,7 +414,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "Juki Net Toitsu Moji Code: J+%04X\n",
+			g_string_append_printf(str, _("Juki Net Toitsu Moji Code: J+%04X\n"),
 			                       sqlite3_column_int(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -425,7 +425,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "Toki Toitsu Moji Bango: %08d\n",
+			g_string_append_printf(str, _("Toki Toitsu Moji Bango: %08d\n"),
 			                       sqlite3_column_int(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -436,7 +436,7 @@ iconview1_select_textview2 (GtkIconView *iconview, gpointer user_data)
 	} else {
 		sqlite3_bind_text(stmt, 1, mjname, -1, SQLITE_TRANSIENT);
 		if (sqlite3_step(stmt) == SQLITE_ROW) {
-			g_string_append_printf(str, "Dai Kanwa Jiten: %s\n",
+			g_string_append_printf(str, _("Dai Kanwa Jiten: %s\n"),
 			                       sqlite3_column_text(stmt, 0));
 		}
 		sqlite3_finalize (stmt);
@@ -482,6 +482,13 @@ build_query (const gchar* str)
 			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 			continue;
 		}
+		if ( g_str_has_prefix(s, "dkw-") ) {
+			if (*(s+4) == '\0') continue;
+			g_ptr_array_add(queries, " select mj from mj_daikanwa where daikanwa = ? or daikanwa = ? ");
+			g_ptr_array_add(binds, g_strdup_printf("%s", s+4));
+			g_ptr_array_add(binds, g_strdup_printf("%s#", s+4));
+			continue;
+		}
 		if ( g_str_has_prefix(s, "koseki-") || g_str_has_prefix(s, "toki-") ) {
 			char *c;
 			unsigned long l;
@@ -516,29 +523,7 @@ build_query (const gchar* str)
 			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 			continue;
 		}
-		if ( g_str_has_prefix(s, "MJ") || g_str_has_prefix(s, "mj") ) {
-			char *c;
-			unsigned long l = strtoul (s+2, &c, 10);
-			if (*c == '-' && *(c+1) != '\0') {
-				unsigned long l2 = strtoul (c+1, NULL, 10);
-				if (l2 < 10) {
-					l2 = (l / 10) * 10 + l2;
-				} else if (l2 < 100) {
-					l2 = (l / 100) * 100 + l2;
-				} else if (l2 < 1000) {
-					l2 = (l / 1000) * 1000 + l2;
-				} else if (l2 < 10000) {
-					l2 = (l / 10000) * 10000 + l2;
-				}
-				g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi between ? and ? ");
-				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
-				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
-				continue;
-			}
-			g_ptr_array_add(queries, " select mj from mj_info where hanyodenshi = ? ");
-			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
-			continue;
-		}
+		
 		if ( g_str_has_prefix(s, "U+") ) {
 			char *c;
 			unsigned long l = strtoul (s+2, &c, 16);
@@ -554,10 +539,10 @@ build_query (const gchar* str)
 				g_ptr_array_add(queries, " select mj from mj_ucs where ucs between ? and ? ");
 				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 				g_ptr_array_add(binds, g_strdup_printf("%ld", l2));
-				continue;
+			} else {
+				g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? ");
+				g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 			}
-			g_ptr_array_add(queries, " select mj from mj_ucs where ucs = ? ");
-			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 			continue;
 		}
 		if ( g_str_has_prefix(s, "J+") ) {
@@ -673,9 +658,9 @@ build_query (const gchar* str)
 	}
 	g_ptr_array_add(queries, NULL);
 	gchar *query = g_strjoinv (" intersect ", (gchar**) queries->pdata);
-	
 	sqlite3_stmt* stmt = NULL;
-	if (sqlite3_prepare(mjdb, query, -1, &stmt, NULL)) {
+	if ( sqlite3_prepare(mjdb, query, -1, &stmt, NULL) ) {
+		g_free(query);
 		g_ptr_array_free (queries, FALSE);
 		g_ptr_array_free (binds, TRUE);
 		g_warning ("can't open stmt");
@@ -685,6 +670,7 @@ build_query (const gchar* str)
 	for (i = 0; i < binds->len; i++) {
 		sqlite3_bind_text (stmt, i+1, g_ptr_array_index(binds, i), -1, NULL);
 	}
+	g_free(query);
 	g_ptr_array_free (queries, FALSE);
 	g_ptr_array_free (binds, TRUE);
 	return stmt;
