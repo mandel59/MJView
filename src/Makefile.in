@@ -601,9 +601,10 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-local uninstall-uiDATA
-
-.MAKE: install-am install-strip
+uninstall-am: uninstall-binPROGRAMS uninstall-uiDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
+.MAKE: install-am install-strip uninstall-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
 	clean-generic clean-libtool ctags distclean distclean-compile \
@@ -617,14 +618,12 @@ uninstall-am: uninstall-binPROGRAMS uninstall-local uninstall-uiDATA
 	installdirs maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-compile mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-binPROGRAMS uninstall-local \
+	uninstall-am uninstall-binPROGRAMS uninstall-hook \
 	uninstall-uiDATA
 
 
-# Remove ui directory on uninstall
-uninstall-local:
-	-rm -r $(uidir)
-	-rm -r $(datadir)/mjview
+uninstall-hook:
+	-rmdir -p $(uidir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

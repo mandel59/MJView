@@ -73,8 +73,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)"
-DATA = $(db_DATA) $(fonts_DATA)
+am__installdirs = "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)" \
+	"$(DESTDIR)$(mjviewdatadocdir)"
+DATA = $(db_DATA) $(fonts_DATA) $(mjviewdatadoc_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALL_LINGUAS = @ALL_LINGUAS@
@@ -222,8 +223,14 @@ fontsdir = $(datadir)/mjview/fonts
 fonts_DATA = ipamjm.ttf
 dbdir = $(datadir)/mjview/db
 db_DATA = mj.db
-EXTRA_DIST = split_charinfo.pl
+mjviewdatadocdir = $(docdir)
+mjviewdatadoc_DATA = \
+	COPYING_IPAFONT \
+	COPYING_CC
+
+EXTRA_DIST = ipamjm00101.zip MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl COPYING_CC
 DISTCLEANFILES = \
+	COPYING_IPAFONT \
 	ipamjm.ttf \
 	mj.db
 
@@ -306,6 +313,26 @@ uninstall-fontsDATA:
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(fontsdir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(fontsdir)" && rm -f $$files
+install-mjviewdatadocDATA: $(mjviewdatadoc_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(mjviewdatadocdir)" || $(MKDIR_P) "$(DESTDIR)$(mjviewdatadocdir)"
+	@list='$(mjviewdatadoc_DATA)'; test -n "$(mjviewdatadocdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(mjviewdatadocdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(mjviewdatadocdir)" || exit $$?; \
+	done
+
+uninstall-mjviewdatadocDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(mjviewdatadoc_DATA)'; test -n "$(mjviewdatadocdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(mjviewdatadocdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(mjviewdatadocdir)" && rm -f $$files
 tags: TAGS
 TAGS:
 
@@ -347,7 +374,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)"; do \
+	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -396,7 +423,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dbDATA install-fontsDATA
+install-data-am: install-dbDATA install-fontsDATA \
+	install-mjviewdatadocDATA
 
 install-dvi: install-dvi-am
 
@@ -440,9 +468,11 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dbDATA uninstall-fontsDATA uninstall-local
-
-.MAKE: install-am install-strip
+uninstall-am: uninstall-dbDATA uninstall-fontsDATA \
+	uninstall-mjviewdatadocDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
+.MAKE: install-am install-strip uninstall-am
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
@@ -450,30 +480,35 @@ uninstall-am: uninstall-dbDATA uninstall-fontsDATA uninstall-local
 	install-data install-data-am install-dbDATA install-dvi \
 	install-dvi-am install-exec install-exec-am install-fontsDATA \
 	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am uninstall uninstall-am uninstall-dbDATA \
-	uninstall-fontsDATA uninstall-local
+	install-man install-mjviewdatadocDATA install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
+	uninstall-dbDATA uninstall-fontsDATA uninstall-hook \
+	uninstall-mjviewdatadocDATA
 
 
 ipamjm00101.zip:
 	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/ipamjm00101.php
 
+MJMojiJouhouIchiranhyou00101.zip:
+	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/mjmojiichiran/MJMojiJouhouIchiranhyou00101.zip
+
 ipamjm.ttf: ipamjm00101.zip
 	unzip -p $< */ipamjm.ttf > $@
 
-MJMojiJouhouIchiranhyou00101.zip:
-	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/mjmojiichiran/MJMojiJouhouIchiranhyou00101.zip
+COPYING_IPAFONT: ipamjm00101.zip
+	unzip -p $< */IPA_Font_License_Agreement_v1.0.txt > $@
 
 mj.db:  MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl
 	rm -f $@
 	unzip -p $< MJ*.csv | perl $(word 2, $^) $@
 
-uninstall-local:
-	-rm -r $(fontsdir)
-	-rm -r $(dbdir)
+uninstall-hook:
+	-rmdir -p $(fontsdir)
+	-rmdir -p $(dbdir)
+	-rmdir -p $(mjviewdatadocdir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

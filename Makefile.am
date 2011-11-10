@@ -3,7 +3,7 @@
 
 SUBDIRS = src po data
 
-mjviewdocdir = ${prefix}/doc/mjview
+mjviewdocdir = $(docdir)
 mjviewdoc_DATA = \
 	README\
 	COPYING\
@@ -25,7 +25,6 @@ DISTCLEANFILES = intltool-extract \
 	intltool-update \
 	po/.intltool-merge-cache
 
+uninstall-hook:
+	-rmdir -p $(mjviewdocdir)
 
-# Remove doc directory on uninstall
-uninstall-local:
-	-rm -r $(mjviewdocdir)

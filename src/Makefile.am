@@ -35,8 +35,6 @@ mjview_LDADD = $(MJVIEW_LIBS)
 
 EXTRA_DIST = $(ui_DATA)
 
-# Remove ui directory on uninstall
-uninstall-local:
-	-rm -r $(uidir)
-	-rm -r $(datadir)/mjview
+uninstall-hook:
+	-rmdir -p $(uidir)
 
