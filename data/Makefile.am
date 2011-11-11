@@ -4,6 +4,11 @@ fonts_DATA = ipamjm.ttf
 dbdir = $(datadir)/mjview/db
 db_DATA = mj.db
 
+desktopdir = $(datadir)/applications
+desktop_in_files = mjview.desktop.in
+desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
+@INTLTOOL_DESKTOP_RULE@
+
 mjviewdatadocdir = $(docdir)
 mjviewdatadoc_DATA = \
 	COPYING_IPAFONT \
@@ -25,9 +30,15 @@ mj.db:  MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl
 	rm -f $@
 	unzip -p $< MJ*.csv | perl $(word 2, $^) $@
 
-EXTRA_DIST = ipamjm00101.zip MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl COPYING_CC
+EXTRA_DIST = \
+	$(desktop_in_files) \
+	COPYING_CC \
+	ipamjm00101.zip \
+	MJMojiJouhouIchiranhyou00101.zip \
+	split_charinfo.pl
 
 DISTCLEANFILES = \
+        $(desktop_DATA) \
 	COPYING_IPAFONT \
 	ipamjm.ttf \
 	mj.db

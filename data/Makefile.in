@@ -73,9 +73,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)" \
-	"$(DESTDIR)$(mjviewdatadocdir)"
-DATA = $(db_DATA) $(fonts_DATA) $(mjviewdatadoc_DATA)
+am__installdirs = "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(desktopdir)" \
+	"$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"
+DATA = $(db_DATA) $(desktop_DATA) $(fonts_DATA) $(mjviewdatadoc_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALL_LINGUAS = @ALL_LINGUAS@
@@ -223,13 +223,23 @@ fontsdir = $(datadir)/mjview/fonts
 fonts_DATA = ipamjm.ttf
 dbdir = $(datadir)/mjview/db
 db_DATA = mj.db
+desktopdir = $(datadir)/applications
+desktop_in_files = mjview.desktop.in
+desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 mjviewdatadocdir = $(docdir)
 mjviewdatadoc_DATA = \
 	COPYING_IPAFONT \
 	COPYING_CC
 
-EXTRA_DIST = ipamjm00101.zip MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl COPYING_CC
+EXTRA_DIST = \
+	$(desktop_in_files) \
+	COPYING_CC \
+	ipamjm00101.zip \
+	MJMojiJouhouIchiranhyou00101.zip \
+	split_charinfo.pl
+
 DISTCLEANFILES = \
+        $(desktop_DATA) \
 	COPYING_IPAFONT \
 	ipamjm.ttf \
 	mj.db
@@ -293,6 +303,26 @@ uninstall-dbDATA:
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(dbdir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(dbdir)" && rm -f $$files
+install-desktopDATA: $(desktop_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(desktopdir)" || $(MKDIR_P) "$(DESTDIR)$(desktopdir)"
+	@list='$(desktop_DATA)'; test -n "$(desktopdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(desktopdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(desktopdir)" || exit $$?; \
+	done
+
+uninstall-desktopDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(desktop_DATA)'; test -n "$(desktopdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(desktopdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(desktopdir)" && rm -f $$files
 install-fontsDATA: $(fonts_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(fontsdir)" || $(MKDIR_P) "$(DESTDIR)$(fontsdir)"
@@ -374,7 +404,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"; do \
+	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(desktopdir)" "$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -423,7 +453,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dbDATA install-fontsDATA \
+install-data-am: install-dbDATA install-desktopDATA install-fontsDATA \
 	install-mjviewdatadocDATA
 
 install-dvi: install-dvi-am
@@ -468,8 +498,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dbDATA uninstall-fontsDATA \
-	uninstall-mjviewdatadocDATA
+uninstall-am: uninstall-dbDATA uninstall-desktopDATA \
+	uninstall-fontsDATA uninstall-mjviewdatadocDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: install-am install-strip uninstall-am
@@ -477,17 +507,19 @@ uninstall-am: uninstall-dbDATA uninstall-fontsDATA \
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dbDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-fontsDATA \
-	install-html install-html-am install-info install-info-am \
-	install-man install-mjviewdatadocDATA install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install-data install-data-am install-dbDATA \
+	install-desktopDATA install-dvi install-dvi-am install-exec \
+	install-exec-am install-fontsDATA install-html install-html-am \
+	install-info install-info-am install-man \
+	install-mjviewdatadocDATA install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-dbDATA uninstall-fontsDATA uninstall-hook \
-	uninstall-mjviewdatadocDATA
+	uninstall-dbDATA uninstall-desktopDATA uninstall-fontsDATA \
+	uninstall-hook uninstall-mjviewdatadocDATA
 
+@INTLTOOL_DESKTOP_RULE@
 
 ipamjm00101.zip:
 	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/ipamjm00101.php

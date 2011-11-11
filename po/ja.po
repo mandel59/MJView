@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-11-11 18:59+0900\n"
+"POT-Creation-Date: 2011-11-11 20:56+0900\n"
 "PO-Revision-Date: 2011-11-09 17:52+0900\n"
 "Last-Translator: Ryusei Yamaguchi <mandel59@gmail.com>\n"
 "Language-Team: Japanese <mandel59@gmail.com>\n"
@@ -17,7 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/mjview.ui.h:1 ../src/main.c:47
+#: ../data/mjview.desktop.in.h:1
+#, fuzzy
+msgid "Look up CJK characters"
+msgstr "漢字を探す"
+
+#: ../data/mjview.desktop.in.h:2 ../src/mjview.ui.h:1 ../src/main.c:47
 msgid "MJView"
 msgstr "文字情報ビュー"
 

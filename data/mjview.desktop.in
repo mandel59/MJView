@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+_Name=MJView
+_Comment=Look up CJK characters
+Exec=mjview
+Terminal=false
+Type=Application
+Icon=mjview
+Categories=GNOME;GTK;Utility;

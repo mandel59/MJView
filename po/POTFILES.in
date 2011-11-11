@@ -1,4 +1,5 @@
 # List of source files containing translatable strings.
+data/mjview.desktop.in
 [type: gettext/glade]src/mjview.ui
 src/main.c
 src/mjview.c
