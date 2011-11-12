@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkListStore" id="liststore1">
-    <columns>
-      <!-- column-name glyph -->
-      <column type="GdkPixbuf"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
   <object class="GtkWindow" id="window">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -209,7 +201,6 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="selection_mode">browse</property>
-                        <property name="model">liststore1</property>
                         <property name="row_spacing">0</property>
                         <property name="column_spacing">0</property>
                         <property name="tooltip_column">1</property>

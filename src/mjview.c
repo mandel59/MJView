@@ -42,7 +42,6 @@
 #define TOP_WINDOW "window"
 
 GtkWidget *window = NULL;
-GtkListStore *liststore1 = NULL;
 GtkEntry *entry1 = NULL;
 GtkIconView *iconview1 = NULL;
 GtkToggleButton *togglebutton1 = NULL;
@@ -71,12 +70,11 @@ mjview_new_window (GApplication *app,
 
 	/* Get the window object from the ui file */
 	window = GTK_WIDGET (gtk_builder_get_object (builder, TOP_WINDOW));
-	liststore1 = GTK_LIST_STORE (gtk_builder_get_object (builder, "liststore1"));
 	entry1 = GTK_ENTRY (gtk_builder_get_object (builder, "entry1"));
 	iconview1 = GTK_ICON_VIEW (gtk_builder_get_object (builder, "iconview1"));
 	togglebutton1 = GTK_TOGGLE_BUTTON (gtk_builder_get_object (builder, "togglebutton1"));
 	filefilter1 = GTK_FILE_FILTER (gtk_builder_get_object (builder, "filefilter1"));
-	if (!(window && liststore1 && entry1 && iconview1 && togglebutton1))
+	if (!(window && entry1 && iconview1 && togglebutton1))
 	{
 		g_critical ("Widget \"%s\" is missing in file %s.",
 		            TOP_WINDOW,
@@ -681,15 +679,16 @@ sqlite3_stmt *step_add_stmt = NULL;
 gboolean
 step_add (gpointer user_data)
 {
-	GtkListStore *ls = liststore1;
+	GtkListStore *ls = GTK_LIST_STORE( gtk_icon_view_get_model (GTK_ICON_VIEW (iconview1)) );
 	sqlite3_stmt *stmt = step_add_stmt;
-	int em = 50;
+	int const em = 50;
 	if (small_glyph_surface == NULL) {
 		small_glyph_surface
 			= cairo_image_surface_create (CAIRO_FORMAT_ARGB32, em, em);
 	}
 	cairo_surface_t *glyph = small_glyph_surface;
-	int i = 0, max = 100;
+	int i = 0;
+	int const max = 100;
 	while (i < max && sqlite3_step(stmt) == SQLITE_ROW) {
 		gchar *mjname = g_strdup((gchar*) sqlite3_column_text(stmt, 0));
 		mjname[0] = 'm'; mjname[1] = 'j';
@@ -718,7 +717,6 @@ void
 entry1_activate_togglebutton1 (GtkEntry *entry, gpointer user_data)
 {
 	GtkToggleButton *button = GTK_TOGGLE_BUTTON(user_data);
-	entry1 = entry;
 	gtk_toggle_button_set_active (button, TRUE);
 }
 
@@ -740,12 +738,12 @@ togglebutton1_clicked (GtkToggleButton *togglebutton, gpointer user_data)
 			gtk_toggle_button_set_active (togglebutton, FALSE);
 			return;
 		}
-		GtkIconView *iv = GTK_ICON_VIEW (user_data);
-		GtkListStore *ls = GTK_LIST_STORE( gtk_icon_view_get_model (iv) );
-		togglebutton1 = togglebutton;
-		liststore1 = ls;
-		gtk_list_store_clear (ls);
-		gtk_icon_view_set_pixbuf_column (iv, 0);
+		GtkListStore *ls = gtk_list_store_new (2, GDK_TYPE_PIXBUF, G_TYPE_STRING);
+		gtk_icon_view_set_model (iconview1, GTK_TREE_MODEL (ls));
+		g_object_unref (ls);
+		gtk_icon_view_set_pixbuf_column (iconview1, 0);
+		gtk_icon_view_set_text_column (iconview1, -1);
+		gtk_icon_view_set_tooltip_column (iconview1, 1);
 		step_add_stmt = stmt;
 		sid = g_idle_add((GSourceFunc) step_add, NULL);
 	}
