@@ -28,13 +28,13 @@
 #include <sqlite3.h>
 
 
-#if !DEBUG
+#ifndef DEBUG
 #define UI_FILE PACKAGE_DATA_DIR"/mjview/ui/mjview.ui"
 #define FONT_FILE PACKAGE_DATA_DIR"/mjview/fonts/ipamjm.ttf"
 #define DB_FILE PACKAGE_DATA_DIR"/mjview/db/mj.db"
 #else
 /* For testing propose use the local (not installed) files */
-#define UI_FILE "src/mjview.ui"
+#define UI_FILE PACKAGE_TOP_BUILDDIR"/../src/mjview.ui"
 #define FONT_FILE PACKAGE_TOP_BUILDDIR"/data/ipamjm.ttf"
 #define DB_FILE PACKAGE_TOP_BUILDDIR"/data/mj.db"
 #endif
@@ -749,4 +749,10 @@ togglebutton1_clicked (GtkToggleButton *togglebutton, gpointer user_data)
 		step_add_stmt = stmt;
 		sid = g_idle_add((GSourceFunc) step_add, NULL);
 	}
+}
+
+void
+menu_quit (GtkMenuItem *menuitem, gpointer user_data)
+{
+	gtk_widget_destroy (GTK_WIDGET (user_data));
 }
