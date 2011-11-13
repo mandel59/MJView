@@ -14,6 +14,9 @@ mjviewdatadoc_DATA = \
 	COPYING_IPAFONT \
 	COPYING_CC
 
+uidir = $(datadir)/mjview/ui
+ui_DATA = mjview.ui
+
 ipamjm00101.zip:
 	wget -O $@ http://ossipedia.ipa.go.jp/ipamjfont/ipamjm00101.php
 
@@ -32,18 +35,20 @@ mj.db:  MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl
 
 EXTRA_DIST = \
 	$(desktop_in_files) \
+	$(ui_DATA) \
 	COPYING_CC \
 	ipamjm00101.zip \
 	MJMojiJouhouIchiranhyou00101.zip \
 	split_charinfo.pl
 
 DISTCLEANFILES = \
-        $(desktop_DATA) \
+	$(desktop_DATA) \
 	COPYING_IPAFONT \
 	ipamjm.ttf \
 	mj.db
 
 uninstall-hook:
+	-rmdir -p $(uidir)
 	-rmdir -p $(fontsdir)
 	-rmdir -p $(dbdir)
 	-rmdir -p $(mjviewdatadocdir)

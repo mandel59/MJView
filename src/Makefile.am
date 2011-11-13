@@ -2,11 +2,6 @@
 
 ## Created by Anjuta
 
-
-uidir = $(datadir)/mjview/ui
-ui_DATA = mjview.ui
-
-
 AM_CPPFLAGS = \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	-DPACKAGE_SRC_DIR=\""$(srcdir)"\" \
@@ -31,10 +26,4 @@ mjview_LDFLAGS = \
 	-Wl,--export-dynamic
 
 mjview_LDADD = $(MJVIEW_LIBS)
-
-
-EXTRA_DIST = $(ui_DATA)
-
-uninstall-hook:
-	-rmdir -p $(uidir)
 

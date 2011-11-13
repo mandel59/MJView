@@ -74,8 +74,10 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(desktopdir)" \
-	"$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"
-DATA = $(db_DATA) $(desktop_DATA) $(fonts_DATA) $(mjviewdatadoc_DATA)
+	"$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)" \
+	"$(DESTDIR)$(uidir)"
+DATA = $(db_DATA) $(desktop_DATA) $(fonts_DATA) $(mjviewdatadoc_DATA) \
+	$(ui_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALL_LINGUAS = @ALL_LINGUAS@
@@ -231,15 +233,18 @@ mjviewdatadoc_DATA = \
 	COPYING_IPAFONT \
 	COPYING_CC
 
+uidir = $(datadir)/mjview/ui
+ui_DATA = mjview.ui
 EXTRA_DIST = \
 	$(desktop_in_files) \
+	$(ui_DATA) \
 	COPYING_CC \
 	ipamjm00101.zip \
 	MJMojiJouhouIchiranhyou00101.zip \
 	split_charinfo.pl
 
 DISTCLEANFILES = \
-        $(desktop_DATA) \
+	$(desktop_DATA) \
 	COPYING_IPAFONT \
 	ipamjm.ttf \
 	mj.db
@@ -363,6 +368,26 @@ uninstall-mjviewdatadocDATA:
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(mjviewdatadocdir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(mjviewdatadocdir)" && rm -f $$files
+install-uiDATA: $(ui_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(uidir)" || $(MKDIR_P) "$(DESTDIR)$(uidir)"
+	@list='$(ui_DATA)'; test -n "$(uidir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(uidir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(uidir)" || exit $$?; \
+	done
+
+uninstall-uiDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(ui_DATA)'; test -n "$(uidir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(uidir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(uidir)" && rm -f $$files
 tags: TAGS
 TAGS:
 
@@ -404,7 +429,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(desktopdir)" "$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)"; do \
+	for dir in "$(DESTDIR)$(dbdir)" "$(DESTDIR)$(desktopdir)" "$(DESTDIR)$(fontsdir)" "$(DESTDIR)$(mjviewdatadocdir)" "$(DESTDIR)$(uidir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -454,7 +479,7 @@ info: info-am
 info-am:
 
 install-data-am: install-dbDATA install-desktopDATA install-fontsDATA \
-	install-mjviewdatadocDATA
+	install-mjviewdatadocDATA install-uiDATA
 
 install-dvi: install-dvi-am
 
@@ -499,7 +524,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-dbDATA uninstall-desktopDATA \
-	uninstall-fontsDATA uninstall-mjviewdatadocDATA
+	uninstall-fontsDATA uninstall-mjviewdatadocDATA \
+	uninstall-uiDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: install-am install-strip uninstall-am
@@ -512,12 +538,12 @@ uninstall-am: uninstall-dbDATA uninstall-desktopDATA \
 	install-exec-am install-fontsDATA install-html install-html-am \
 	install-info install-info-am install-man \
 	install-mjviewdatadocDATA install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-ps install-ps-am install-strip install-uiDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-dbDATA uninstall-desktopDATA uninstall-fontsDATA \
-	uninstall-hook uninstall-mjviewdatadocDATA
+	uninstall-hook uninstall-mjviewdatadocDATA uninstall-uiDATA
 
 @INTLTOOL_DESKTOP_RULE@
 
@@ -538,6 +564,7 @@ mj.db:  MJMojiJouhouIchiranhyou00101.zip split_charinfo.pl
 	unzip -p $< MJ*.csv | perl $(word 2, $^) $@
 
 uninstall-hook:
+	-rmdir -p $(uidir)
 	-rmdir -p $(fontsdir)
 	-rmdir -p $(dbdir)
 	-rmdir -p $(mjviewdatadocdir)
