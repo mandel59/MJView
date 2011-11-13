@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-DPACKAGE_SRC_DIR=\""$(srcdir)"\" \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_TOP_BUILDDIR=\""$(abs_top_builddir)"\"\
+	-DPACKAGE_TOP_SRCDIR=\""$(abs_top_srcdir)"\"\
 	$(MJVIEW_CFLAGS)
 
 AM_CFLAGS =\

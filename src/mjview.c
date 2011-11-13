@@ -34,7 +34,7 @@
 #define DB_FILE PACKAGE_DATA_DIR"/mjview/db/mj.db"
 #else
 /* For testing propose use the local (not installed) files */
-#define UI_FILE PACKAGE_TOP_BUILDDIR"/../src/mjview.ui"
+#define UI_FILE PACKAGE_TOP_SRCDIR"/data/mjview.ui"
 #define FONT_FILE PACKAGE_TOP_BUILDDIR"/data/ipamjm.ttf"
 #define DB_FILE PACKAGE_TOP_BUILDDIR"/data/mj.db"
 #endif
