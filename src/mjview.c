@@ -521,7 +521,10 @@ build_query (const gchar* str)
 			g_ptr_array_add(binds, g_strdup_printf("%ld", l));
 			continue;
 		}
-		
+		if ( g_str_has_prefix(s, "NOUCS") ) {
+			g_ptr_array_add(queries, " select mj from mj_info where mj not in ( select mj from mj_ucs ) ");
+			continue;
+		}
 		if ( g_str_has_prefix(s, "U+") ) {
 			char *c;
 			unsigned long l = strtoul (s+2, &c, 16);
